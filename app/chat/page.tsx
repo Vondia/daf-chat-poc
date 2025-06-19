@@ -5,16 +5,23 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { LogOut, Send, Bot, User, MessageSquare } from "lucide-react"
+import { signOut } from "next-auth/react"
 
 interface ChatPageProps {
-  user: { name: string; email: string } | null
-  onLogout: () => void
+  user: {
+    name?: string | null;
+    email?: string | null;
+  } | null;
 }
 
-export default function ChatPage({ user, onLogout }: ChatPageProps) {
+export default function ChatPage({ user }: ChatPageProps) {
   const [messages, setMessages] = useState<Array<{ id: string; role: string; content: string }>>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const onLogout = () => {
+    signOut()
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,20 +56,14 @@ export default function ChatPage({ user, onLogout }: ChatPageProps) {
     }
   };
 
-  console.log("Chat messages:", messages);
-  messages.forEach(m => console.log(m.role, m.content));
-
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="grid grid-rows-[auto_1fr] h-screen">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex justify-between items-center">
             <div className="flex items-center">
               <img src="/daf-logo.svg" alt="DAF Logo" className="h-8 w-auto mr-3" />
-              <div>
-                <p className="text-sm font-medium text-gray-900">Sales Agent</p>
-              </div>
             </div>
 
             <div className="flex items-center space-x-4">
@@ -72,7 +73,7 @@ export default function ChatPage({ user, onLogout }: ChatPageProps) {
               </div>
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-daf-blue text-white text-sm">
-                  {user?.name?.charAt(0).toUpperCase()}
+                  {user?.name?.charAt(0).toUpperCase() || 'J'}
                 </AvatarFallback>
               </Avatar>
               <Button variant="outline" size="sm" onClick={onLogout} className="border-gray-300 hover:bg-gray-50">
@@ -85,28 +86,27 @@ export default function ChatPage({ user, onLogout }: ChatPageProps) {
       </header>
 
       {/* Main Content */}
-      <main className="p-4 h-[calc(100vh-4rem)] relative">
-        {/* Enhanced Background with DAF trucks */}
-        <div className="absolute inset-0 -m-4 overflow-hidden">
-          <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat transform scale-105"
-            style={{
-              backgroundImage: "url('/daf-trucks-bg.jpg')",
-            }}
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-transparent to-red-900/20"></div>
-            <div className="absolute inset-0 bg-white/85 backdrop-blur-[2px]"></div>
-          </div>
-
-          {/* Decorative elements */}
-          <div className="absolute top-10 left-10 w-32 h-32 bg-daf-red/10 rounded-full blur-xl animate-pulse"></div>
-          <div className="absolute bottom-20 right-20 w-24 h-24 bg-daf-blue/10 rounded-full blur-lg animate-bounce"></div>
-          <div
-            className="absolute top-1/3 right-10 w-20 h-20 bg-daf-red/5 rounded-full blur-md animate-pulse"
-            style={{ animationDelay: "1s" }}
-          ></div>
+      <main className="relative overflow-hidden p-4">
+        {/* Background */}
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: "url('/daf-trucks-bg.jpg')",
+          }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-transparent to-red-900/20"></div>
+          <div className="absolute inset-0 bg-white/85 backdrop-blur-[2px]"></div>
         </div>
 
+        {/* Decorative elements */}
+        <div className="absolute top-10 left-10 w-32 h-32 bg-daf-red/10 rounded-full blur-xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-20 w-24 h-24 bg-daf-blue/10 rounded-full blur-lg animate-bounce"></div>
+        <div
+          className="absolute top-1/3 right-10 w-20 h-20 bg-daf-red/5 rounded-full blur-md animate-pulse"
+          style={{ animationDelay: "1s" }}
+        ></div>
+
+        {/* Chat Card */}
         <Card className="max-w-4xl mx-auto h-full flex flex-col shadow-2xl relative z-10 bg-white/95 backdrop-blur-sm border-0">
           <CardHeader className="bg-gradient-to-r from-daf-red via-red-600 to-daf-red text-white rounded-t-lg relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse"></div>

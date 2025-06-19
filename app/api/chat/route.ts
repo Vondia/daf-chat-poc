@@ -1,4 +1,6 @@
 import { runAzureAgentConversation } from "@/lib/azureAgent";
+import { getServerSession } from "next-auth/next"
+
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -7,6 +9,12 @@ const AZURE_PROJECT_ENDPOINT = "https://daf-ai-foundry-resource.services.ai.azur
 const AGENT_ID = "asst_BhZOlCbV9SPY3wmzspYMYggP";
 
 export async function POST(req: Request) {
+//   const session = await getServerSession(authOptions)
+
+//   if (!session) {
+//     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 })
+//   }
+
   const { messages, threadId } = await req.json();
 
   // Find the latest user message
