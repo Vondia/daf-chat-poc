@@ -2,9 +2,11 @@ import { withAuth } from "next-auth/middleware"
 
 export default withAuth({
   pages: {
-    signIn: "/",
+    signIn: "/login",
   },
 })
 
 // Configure which paths should be handled by the middleware
-export const config = { matcher: ["/chat", "/api/chat"] }
+export const config = {
+  matcher: ["/((?!login|_next/static|_next/image|favicon.ico|.*\\.(?:jpg|jpeg|gif|png|svg|ico)$).*)"],
+}

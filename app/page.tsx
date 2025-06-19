@@ -1,146 +1,224 @@
-  "use client"
-
-import type React from "react"
-
-import { useState } from "react"
+"use client"
+import { useState, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Lock, Mail } from "lucide-react"
-import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { LogOut, Send, Bot, User, MessageSquare } from "lucide-react"
+import { signOut } from "next-auth/react"
 
-export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const router = useRouter()
+interface ChatPageProps {
+  user: {
+    name?: string | null;
+    email?: string | null;
+  } | null;
+}
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
+export default function HomePage({ user }: ChatPageProps) {
+  const [messages, setMessages] = useState<Array<{ id: string; role: string; content: string }>>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      })
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
-      if (result?.error) {
-        setError('Invalid credentials')
-      } else {
-        // Redirect to the chat page on successful login
-        router.push('/chat')
-      }
-    } catch (error) {
-      setError('An error occurred during login')
-    }
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isLoading]);
+
+  const onLogout = () => {
+    signOut()
   }
 
-  return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* Background Image */}
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: "url('/daf-trucks-bg.jpg')",
-        }}
-      >
-        <div className="absolute inset-0 bg-black bg-opacity-40"></div>
-      </div>
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
 
-      {/* Content */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        {/* Add floating elements for visual interest */}
-        <div className="absolute top-10 left-10 w-20 h-20 bg-white bg-opacity-10 rounded-full animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-16 h-16 bg-daf-red bg-opacity-20 rounded-full animate-bounce"></div>
+    // Add user message immediately
+    const userMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: input.trim()
+    };
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [...messages, userMessage],
+          threadId: null // or maintain threadId if needed
+        })
+      });
+
+      const assistantMessage = await response.json();
+      setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Chat error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="grid grid-rows-[auto_1fr] h-screen">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              <img src="/daf-logo.svg" alt="DAF Logo" className="h-8 w-auto mr-3" />
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-medium text-gray-900">{user?.name}</p>
+                <p className="text-xs text-gray-500">{user?.email}</p>
+              </div>
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-daf-blue text-white text-sm">
+                  {user?.name?.charAt(0).toUpperCase() || 'J'}
+                </AvatarFallback>
+              </Avatar>
+              <Button variant="outline" size="sm" onClick={onLogout} className="border-gray-300 hover:bg-gray-50">
+                <LogOut className="h-4 w-4 mr-2" />
+                Uitloggen
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="relative overflow-hidden p-4">
+        {/* Background */}
         <div
-          className="absolute top-1/3 right-10 w-12 h-12 bg-daf-blue bg-opacity-15 rounded-full animate-pulse"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: "url('/daf-trucks-bg.jpg')",
+          }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-transparent to-red-900/20"></div>
+          <div className="absolute inset-0 bg-white/85 backdrop-blur-[2px]"></div>
+        </div>
+
+        {/* Decorative elements */}
+        <div className="absolute top-10 left-10 w-32 h-32 bg-daf-red/10 rounded-full blur-xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-20 w-24 h-24 bg-daf-blue/10 rounded-full blur-lg animate-bounce"></div>
+        <div
+          className="absolute top-1/3 right-10 w-20 h-20 bg-daf-red/5 rounded-full blur-md animate-pulse"
           style={{ animationDelay: "1s" }}
         ></div>
-        <div className="w-full max-w-md">
-          <Card className="shadow-2xl border-0 bg-white bg-opacity-95 backdrop-blur-sm">
-            <CardHeader className="space-y-1 pb-6">
-              <div className="flex items-center justify-center mb-6">
-                <img src="/daf-logo.svg" alt="DAF Logo" className="h-16 w-auto" />
+
+        {/* Chat Card */}
+        <Card className="max-w-4xl mx-auto h-full max-h-[calc(100vh-10rem)] overflow-y-auto flex flex-col shadow-2xl relative z-10 bg-white/95 backdrop-blur-sm border-0">
+          <CardHeader className="bg-gradient-to-r from-daf-red via-red-600 to-daf-red text-white min-h-fit rounded-t-lg relative overflow-hidden sticky top-0 z-20">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse"></div>
+            <div className="flex items-center relative z-10">
+              <Bot className="h-6 w-6 mr-3" />
+              <div>
+                <h2 className="text-lg font-semibold">DAF Sales Agent</h2>
+                <p className="text-sm opacity-90">Uw persoonlijke assistent voor DAF trucks en diensten</p>
               </div>
-              <div className="flex items-center justify-center mb-4">
-                <Lock className="h-6 w-6 text-daf-blue mr-2" />
-                <CardTitle className="text-2xl font-semibold text-gray-900">Inloggen</CardTitle>
-              </div>
-              <CardDescription className="text-center text-gray-600">Toegang tot de DAF Sales Agent</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {error && (
-                  <div className="text-red-500 text-center">{error}</div>
-                )}
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                    E-mailadres
-                  </Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      placeholder="uw.email@bedrijf.nl"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 border-gray-300 focus:border-daf-blue focus:ring-daf-blue"
-                      required
-                    />
+            </div>
+          </CardHeader>
+
+          <CardContent className="flex-1 flex flex-col p-0 bg-gradient-to-b from-gray-50/50 to-white/80">
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {messages.length === 0 && (
+                <div className="text-center py-12 relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-daf-blue/5 to-daf-red/5 rounded-xl blur-3xl"></div>
+                  <div className="relative z-10">
+                    <MessageSquare className="h-12 w-12 text-daf-blue mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Welkom bij de DAF Sales Agent</h3>
+                    <p className="text-gray-600 max-w-md mx-auto">
+                      Ik help u graag met vragen over DAF trucks, configuraties, prijzen en diensten. Stel gerust uw
+                      vraag!
+                    </p>
                   </div>
                 </div>
+              )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-                    Wachtwoord
-                  </Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 border-gray-300 focus:border-daf-blue focus:ring-daf-blue"
-                      required
-                    />
+              {messages.map((message) => (
+                <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+                  <div
+                    className={`flex max-w-xs lg:max-w-md ${message.role === "user" ? "flex-row-reverse" : "flex-row"}`}
+                  >
+                    <Avatar className="h-8 w-8 flex-shrink-0">
+                      <AvatarFallback
+                        className={message.role === "user" ? "bg-daf-blue text-white" : "bg-daf-red text-white"}
+                      >
+                        {message.role === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div
+                      className={`mx-3 p-3 rounded-lg shadow-sm ${
+                        message.role === "user"
+                          ? "bg-daf-blue text-white"
+                          : "bg-white/90 backdrop-blur-sm border border-gray-200 text-gray-900"
+                      }`}
+                    >
+                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    </div>
                   </div>
                 </div>
+              ))}
 
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="flex">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-daf-red text-white">
+                        <Bot className="h-4 w-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="mx-3 p-3 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg shadow-sm">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-daf-red rounded-full animate-bounce"></div>
+                        <div
+                          className="w-2 h-2 bg-daf-red rounded-full animate-bounce"
+                          style={{ animationDelay: "0.1s" }}
+                        ></div>
+                        <div
+                          className="w-2 h-2 bg-daf-red rounded-full animate-bounce"
+                          style={{ animationDelay: "0.2s" }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Area */}
+            <div className="border-t border-gray-200/50 p-4 bg-white/80 backdrop-blur-sm">
+              <form onSubmit={handleSubmit} className="flex space-x-2">
+                <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Stel uw vraag over DAF trucks..."
+                  className="flex-1 border-gray-300 focus:border-daf-blue focus:ring-daf-blue bg-white/90 backdrop-blur-sm"
+                  disabled={isLoading}
+                />
                 <Button
                   type="submit"
-                  className="w-full bg-daf-red hover:bg-red-700 text-white font-medium py-2.5 transition-colors duration-200"
+                  disabled={isLoading || !input.trim()}
+                  className="bg-daf-blue hover:bg-daf-blue/90 text-white"
                 >
-                  Inloggen
+                  <Send className="h-4 w-4" />
                 </Button>
               </form>
-
-              <div className="mt-6 text-center space-y-2">
-                <p className="text-xs text-gray-500">
-                  Door in te loggen gaat u akkoord met onze{" "}
-                  <a
-                    href="https://www.daf.com/nl-nl/legal/de-algemene-voorwaarden"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-daf-blue hover:underline"
-                  >
-                    Algemene Voorwaarden
-                  </a>
-                </p>
-                <p className="text-sm text-gray-500">© 2025 DAF Trucks N.V. Alle rechten voorbehouden.</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            </div>
+          </CardContent>
+        </Card>
+      </main>
     </div>
-  )
+  );
 }
