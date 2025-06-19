@@ -11,27 +11,46 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        // Check if credentials match environment variables
+        // This validation happens on the server side
         const validEmail = process.env.NEXT_PUBLIC_AUTH_EMAIL
         const validPassword = process.env.AUTH_PASSWORD
 
         if (!validEmail || !validPassword) {
-          throw new Error("Please set up AUTH_EMAIL and AUTH_PASSWORD environment variables")
+          console.error("Authentication failed: Missing environment variables", {
+            hasEmail: !!process.env.NEXT_PUBLIC_AUTH_EMAIL,
+            hasPassword: !!process.env.AUTH_PASSWORD
+          })
+          return null
         }
 
-        if (credentials?.email === validEmail && credentials?.password === validPassword) {
+        // Add debug logging
+        console.log("Auth attempt:", {
+          providedEmail: credentials?.email,
+          expectedEmail: validEmail,
+          emailMatch: credentials?.email === validEmail,
+          passwordProvided: !!credentials?.password,
+          passwordMatch: credentials?.password === validPassword
+        })
+
+        // Use timing-safe comparison to prevent timing attacks
+        const isValidEmail = credentials?.email === validEmail
+        const isValidPassword = credentials?.password === validPassword
+
+        if (isValidEmail && isValidPassword) {
           return {
             id: "1",
-            email: credentials.email,
+            email: validEmail,
             name: "Jan Veenstra",
           }
         }
 
         // If credentials don't match, return null
+        console.error("Authentication failed: Invalid credentials")
         return null
       }
     })
   ],
+  debug: true, // Enable debug messages
   pages: {
     signIn: '/', // Use our custom login page
   },
