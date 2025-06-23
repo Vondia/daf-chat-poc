@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { LogOut, Send, Bot, User, MessageSquare } from "lucide-react"
+import { LogOut, Send, Bot, User, MessageSquare, Link as LinkIcon } from "lucide-react"
 import { signOut } from "next-auth/react"
 import ReactMarkdown from 'react-markdown'
 
@@ -15,11 +15,62 @@ interface ChatPageProps {
   } | null;
 }
 
+interface Citation {
+  startIndex: number;
+  endIndex: number;
+  content: string;
+  title?: string;
+  url?: string;
+  fileId?: string;
+  fileName?: string;
+}
+
+interface Attachment {
+  mimeType: string;
+  data: string;
+}
+
 interface Message {
   id: string;
   role: string;
   content: string;
   isMarkdown?: boolean;
+  citations?: Citation[];
+  attachments?: Attachment[];
+}
+
+function cleanContent(content: string): string {
+  // Remove citation markers like †source and †bron
+  return content.replace(/†source/g, '').replace(/†bron/g, '');
+}
+
+function deduplicateCitations(citations: Citation[]): Citation[] {
+  const seen = new Set<string>();
+  return citations
+    .filter(citation => {
+      const key = `${citation.content} ${citation.fileName}`;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => {
+      // Extract numbers from citation content (e.g., [4:13] -> [4, 13])
+      const getNumbers = (content: string) => {
+        const match = content.match(/\[?(\d+):(\d+)\]?/);
+        return match ? [parseInt(match[1]), parseInt(match[2])] : [0, 0];
+      };
+
+      const [aMain, aSub] = getNumbers(a.content);
+      const [bMain, bSub] = getNumbers(b.content);
+
+      // Sort by main number first, then by sub-number
+      if (aMain !== bMain) {
+        return aMain - bMain;
+      }
+      return aSub - bSub;
+    });
 }
 
 export default function HomePage({ user }: ChatPageProps) {
@@ -72,7 +123,7 @@ export default function HomePage({ user }: ChatPageProps) {
       setIsLoading(false);
     }
   };
-console.log("messages", messages)
+
   return (
     <div className="grid grid-rows-[auto_1fr] h-screen">
       {/* Header */}
@@ -175,8 +226,28 @@ console.log("messages", messages)
                       {message.isMarkdown ? (
                         <div className="text-sm prose prose-sm max-w-none dark:prose-invert prose-p:leading-relaxed prose-pre:p-0">
                           <ReactMarkdown>
-                            {message.content}
+                            {cleanContent(message.content)}
                           </ReactMarkdown>
+                          {message.citations && message.citations.length > 0 && (
+                            <div className="mt-2 pt-2 border-t border-gray-200">
+                              <p className="text-xs font-medium text-gray-500 mb-1">Sources:</p>
+                              <ul className="space-y-1">
+                                {deduplicateCitations(message.citations).map((citation, index) => (
+                                  <li key={index} className="flex items-start space-x-1 text-xs text-gray-500">
+                                    <LinkIcon className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                    <span>
+                                      {cleanContent(citation.content)}
+                                      {citation.fileName && (
+                                        <span className="ml-1 text-daf-blue font-medium">
+                                          {citation.fileName}
+                                        </span>
+                                      )}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <p className="text-sm whitespace-pre-wrap">{message.content}</p>

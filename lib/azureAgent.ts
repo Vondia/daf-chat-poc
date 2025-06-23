@@ -1,4 +1,4 @@
-import { AgentsClient, isOutputOfType } from "@azure/ai-agents";
+import { AgentsClient, MessageContent as AzureMessageContent } from "@azure/ai-agents";
 import { DefaultAzureCredential, ClientSecretCredential } from "@azure/identity";
 import { delay } from "@azure/core-util";
 
@@ -23,10 +23,76 @@ const getAzureCredential = () => {
 
 const client = new AgentsClient(endpoint, getAzureCredential());
 
-function isTextContent(
-  content: any
-): content is { type: "text"; text: { value: string } } {
-  return content.type === "text" && !!content.text && typeof content.text.value === "string";
+interface Citation {
+  startIndex: number;
+  endIndex: number;
+  content: string;
+  title?: string;
+  url?: string;
+  fileId?: string;
+  fileName?: string;
+}
+
+interface TextContent {
+  type: "text";
+  text: {
+    value: string;
+    annotations?: Array<{
+      type: string;
+      text: string;
+      fileCitation?: {
+        fileId: string;
+      };
+      startIndex: number;
+      endIndex: number;
+    }>;
+  };
+}
+
+interface InlineDataContent {
+  type: "inline_data";
+  inlineData: {
+    mimeType: string;
+    data: string;
+  };
+}
+
+function isTextContent(content: AzureMessageContent): content is TextContent {
+  const textContent = content as TextContent;
+  return textContent.type === "text" && !!textContent.text && typeof textContent.text.value === "string";
+}
+
+function isInlineDataContent(content: AzureMessageContent): content is InlineDataContent {
+  const inlineContent = content as InlineDataContent;
+  return inlineContent.type === "inline_data" && !!inlineContent.inlineData;
+}
+
+async function processAnnotations(content: TextContent): Promise<Citation[]> {
+  if (!content.text.annotations) return [];
+
+  const citations = content.text.annotations
+    .filter(annotation => annotation.type === "file_citation")
+    .map(async annotation => {
+      const citation: Citation = {
+        startIndex: annotation.startIndex,
+        endIndex: annotation.endIndex,
+        content: annotation.text,
+        fileId: annotation.fileCitation?.fileId
+      };
+
+      if (citation.fileId) {
+        try {
+          const fileInfo = await client.files.get(citation.fileId);
+          citation.fileName = fileInfo.filename;
+        } catch (error) {
+          console.error('Error fetching file info:', error);
+        }
+      }
+
+      return citation;
+    });
+
+  return Promise.all(citations);
 }
 
 export async function runAzureAgentConversation({
@@ -63,15 +129,36 @@ export async function runAzureAgentConversation({
     allMessages.push(m);
   }
 
+  // Log the raw messages for debugging
+//   console.log('Raw messages from Azure:', JSON.stringify(allMessages, null, 2));
+
   // 5. Return the conversation
+  const processedMessages = [];
+  for (const m of allMessages) {
+    const messageContents = m.content as AzureMessageContent[];
+
+    const textContent = messageContents.find(isTextContent) as TextContent | undefined;
+
+    const inlineDataContents = messageContents.filter(isInlineDataContent);
+
+    // Process citations from annotations
+    const citations = textContent ? await processAnnotations(textContent) : [];
+
+    const result = {
+      role: m.role,
+      text: textContent?.text.value || "",
+      citations,
+      attachments: inlineDataContents.map(content => ({
+        mimeType: content.inlineData.mimeType,
+        data: content.inlineData.data
+      }))
+    };
+
+    processedMessages.push(result);
+  }
+
   return {
     threadId: thread.id,
-    messages: allMessages.map((m) => {
-      const textContent = m.content.find(isTextContent);
-      return {
-        role: m.role,
-        text: textContent ? textContent.text.value : "",
-      };
-    }),
+    messages: processedMessages,
   };
 }

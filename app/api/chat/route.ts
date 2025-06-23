@@ -35,6 +35,7 @@ export async function POST(req: Request) {
       userMessage: lastUserMessage.content,
     });
 
+
     // Return just the assistant message
     const assistantMessage = result.messages
       .find(m => m.role === "assistant");
@@ -43,15 +44,19 @@ export async function POST(req: Request) {
       throw new Error("No assistant message found in response");
     }
 
-    return Response.json({
+    const response = {
       id: Date.now().toString(),
       role: "assistant",
       content: assistantMessage.text,
-      // Add a flag to indicate this is markdown content
-      isMarkdown: true
-    });
+      isMarkdown: true,
+      citations: assistantMessage.citations || [],
+      attachments: assistantMessage.attachments || []
+    };
+
+    return Response.json(response);
 
   } catch (error) {
+    console.error('Error in chat route:', error);
     return new Response(JSON.stringify({ error: (error as Error).message }), { status: 500 });
   }
 }
