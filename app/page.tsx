@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { LogOut, Send, Bot, User, MessageSquare } from "lucide-react"
 import { signOut } from "next-auth/react"
+import ReactMarkdown from 'react-markdown'
 
 interface ChatPageProps {
   user: {
@@ -14,8 +15,15 @@ interface ChatPageProps {
   } | null;
 }
 
+interface Message {
+  id: string;
+  role: string;
+  content: string;
+  isMarkdown?: boolean;
+}
+
 export default function HomePage({ user }: ChatPageProps) {
-  const [messages, setMessages] = useState<Array<{ id: string; role: string; content: string }>>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -64,7 +72,7 @@ export default function HomePage({ user }: ChatPageProps) {
       setIsLoading(false);
     }
   };
-
+console.log("messages", messages)
   return (
     <div className="grid grid-rows-[auto_1fr] h-screen">
       {/* Header */}
@@ -164,7 +172,15 @@ export default function HomePage({ user }: ChatPageProps) {
                           : "bg-white/90 backdrop-blur-sm border border-gray-200 text-gray-900"
                       }`}
                     >
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                      {message.isMarkdown ? (
+                        <div className="text-sm prose prose-sm max-w-none dark:prose-invert prose-p:leading-relaxed prose-pre:p-0">
+                          <ReactMarkdown>
+                            {message.content}
+                          </ReactMarkdown>
+                        </div>
+                      ) : (
+                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                      )}
                     </div>
                   </div>
                 </div>

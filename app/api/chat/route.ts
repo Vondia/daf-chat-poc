@@ -6,7 +6,8 @@ import { getServerSession } from "next-auth/next"
 export const maxDuration = 30;
 
 const AZURE_PROJECT_ENDPOINT = "https://daf-ai-foundry-resource.services.ai.azure.com/api/projects/daf-ai";
-const AGENT_ID = "asst_BhZOlCbV9SPY3wmzspYMYggP";
+// const AGENT_ID = "asst_BhZOlCbV9SPY3wmzspYMYggP";
+const AGENT_ID = "asst_Dlz66KRRxlpdKXCnZcFoAkfE";
 
 export async function POST(req: Request) {
 //   const session = await getServerSession(authOptions)
@@ -38,10 +39,16 @@ export async function POST(req: Request) {
     const assistantMessage = result.messages
       .find(m => m.role === "assistant");
 
+    if (!assistantMessage) {
+      throw new Error("No assistant message found in response");
+    }
+
     return Response.json({
       id: Date.now().toString(),
       role: "assistant",
-      content: assistantMessage?.text || ""
+      content: assistantMessage.text,
+      // Add a flag to indicate this is markdown content
+      isMarkdown: true
     });
 
   } catch (error) {
