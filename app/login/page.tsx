@@ -68,9 +68,9 @@ export default function LoginPage() {
               </div>
               <div className="flex items-center justify-center mb-4">
                 <Lock className="h-6 w-6 text-daf-blue mr-2" />
-                <CardTitle className="text-2xl font-semibold text-gray-900">Inloggen</CardTitle>
+                <CardTitle className="text-2xl font-semibold text-gray-900">Login</CardTitle>
               </div>
-              <CardDescription className="text-center text-gray-600">Toegang tot de DAF Sales Agent</CardDescription>
+              <CardDescription className="text-center text-gray-600">Access to DAF Sales Agent</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -79,7 +79,7 @@ export default function LoginPage() {
                 )}
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                    E-mailadres
+                    Email address
                   </Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -87,7 +87,7 @@ export default function LoginPage() {
                       id="email"
                       name="email"
                       type="email"
-                      placeholder="uw.email@bedrijf.nl"
+                      placeholder="your.email@company.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10 border-gray-300 focus:border-daf-blue focus:ring-daf-blue"
@@ -98,7 +98,7 @@ export default function LoginPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-                    Wachtwoord
+                    Password
                   </Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -119,23 +119,23 @@ export default function LoginPage() {
                   type="submit"
                   className="w-full bg-daf-red hover:bg-red-700 text-white font-medium py-2.5 transition-colors duration-200"
                 >
-                  Inloggen
+                  Login
                 </Button>
               </form>
 
               <div className="mt-6 text-center space-y-2">
                 <p className="text-xs text-gray-500">
-                  Door in te loggen gaat u akkoord met onze{" "}
+                  By logging in, you agree to our{" "}
                   <a
                     href="https://www.daf.com/nl-nl/legal/de-algemene-voorwaarden"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-daf-blue hover:underline"
                   >
-                    Algemene Voorwaarden
+                    Terms and Conditions
                   </a>
                 </p>
-                <p className="text-sm text-gray-500">© 2025 DAF Trucks N.V. Alle rechten voorbehouden.</p>
+                <p className="text-sm text-gray-500">© 2025 DAF Trucks N.V. All rights reserved.</p>
               </div>
             </CardContent>
           </Card>

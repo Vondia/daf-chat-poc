@@ -146,7 +146,7 @@ export default function HomePage({ user }: ChatPageProps) {
               </Avatar>
               <Button variant="outline" size="sm" onClick={onLogout} className="border-gray-300 hover:bg-gray-50">
                 <LogOut className="h-4 w-4 mr-2" />
-                Uitloggen
+                Logout
               </Button>
             </div>
           </div>
@@ -182,7 +182,7 @@ export default function HomePage({ user }: ChatPageProps) {
               <Bot className="h-6 w-6 mr-3" />
               <div>
                 <h2 className="text-lg font-semibold">DAF Sales Agent</h2>
-                <p className="text-sm opacity-90">Uw persoonlijke assistent voor DAF trucks en diensten</p>
+                <p className="text-sm opacity-90">Your personal assistant for DAF trucks and services</p>
               </div>
             </div>
           </CardHeader>
@@ -195,32 +195,37 @@ export default function HomePage({ user }: ChatPageProps) {
                   <div className="absolute inset-0 bg-gradient-to-br from-daf-blue/5 to-daf-red/5 rounded-xl blur-3xl"></div>
                   <div className="relative z-10">
                     <MessageSquare className="h-12 w-12 text-daf-blue mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Welkom bij de DAF Sales Agent</h3>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Welcome to DAF Sales Agent</h3>
                     <p className="text-gray-600 max-w-md mx-auto">
-                      Ik help u graag met vragen over DAF trucks, configuraties, prijzen en diensten. Stel gerust uw
-                      vraag!
+                      I'm here to help you with questions about DAF trucks, configurations, pricing, and services. Feel free to ask your questions.
                     </p>
                   </div>
                 </div>
               )}
 
-              {messages.map((message) => (
-                <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+              {messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                >
                   <div
-                    className={`flex max-w-xs lg:max-w-md ${message.role === "user" ? "flex-row-reverse" : "flex-row"}`}
+                    className={`flex items-start space-x-2 max-w-[80%] ${
+                      message.role === "user" ? "flex-row-reverse space-x-reverse" : "flex-row"
+                    }`}
                   >
-                    <Avatar className="h-8 w-8 flex-shrink-0">
+                    <Avatar className="h-8 w-8 mt-1">
                       <AvatarFallback
                         className={message.role === "user" ? "bg-daf-blue text-white" : "bg-daf-red text-white"}
                       >
-                        {message.role === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+                        {message.role === "user" ? <User className="h-5 w-5" /> : <Bot className="h-5 w-5" />}
                       </AvatarFallback>
                     </Avatar>
+
                     <div
-                      className={`mx-3 p-3 rounded-lg shadow-sm ${
+                      className={`rounded-lg px-4 py-2 ${
                         message.role === "user"
                           ? "bg-daf-blue text-white"
-                          : "bg-white/90 backdrop-blur-sm border border-gray-200 text-gray-900"
+                          : "bg-white border border-gray-200 shadow-sm"
                       }`}
                     >
                       {message.isMarkdown ? (
@@ -238,8 +243,8 @@ export default function HomePage({ user }: ChatPageProps) {
                                     <span>
                                       {cleanContent(citation.content)}
                                       {citation.fileName && (
-                                        <span className="ml-1 text-daf-blue font-medium">
-                                          {citation.fileName}
+                                        <span className="ml-1 text-daf-blue">
+                                          (Source: {citation.fileName})
                                         </span>
                                       )}
                                     </span>
@@ -259,46 +264,38 @@ export default function HomePage({ user }: ChatPageProps) {
 
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="flex">
+                  <div className="flex items-center space-x-2">
                     <Avatar className="h-8 w-8">
                       <AvatarFallback className="bg-daf-red text-white">
-                        <Bot className="h-4 w-4" />
+                        <Bot className="h-5 w-5" />
                       </AvatarFallback>
                     </Avatar>
-                    <div className="mx-3 p-3 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg shadow-sm">
+                    <div className="bg-white rounded-lg px-4 py-2 border border-gray-200 shadow-sm">
                       <div className="flex space-x-1">
                         <div className="w-2 h-2 bg-daf-red rounded-full animate-bounce"></div>
-                        <div
-                          className="w-2 h-2 bg-daf-red rounded-full animate-bounce"
-                          style={{ animationDelay: "0.1s" }}
-                        ></div>
-                        <div
-                          className="w-2 h-2 bg-daf-red rounded-full animate-bounce"
-                          style={{ animationDelay: "0.2s" }}
-                        ></div>
+                        <div className="w-2 h-2 bg-daf-red rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                        <div className="w-2 h-2 bg-daf-red rounded-full animate-bounce" style={{ animationDelay: "0.4s" }}></div>
                       </div>
                     </div>
                   </div>
                 </div>
               )}
+
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area */}
-            <div className="border-t border-gray-200/50 p-4 bg-white/80 backdrop-blur-sm">
+            {/* Input Area - Now sticky */}
+            <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 z-10">
               <form onSubmit={handleSubmit} className="flex space-x-2">
                 <Input
+                  type="text"
+                  placeholder="Ask your question about DAF trucks..."
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Stel uw vraag over DAF trucks..."
-                  className="flex-1 border-gray-300 focus:border-daf-blue focus:ring-daf-blue bg-white/90 backdrop-blur-sm"
+                  className="flex-1 focus-visible:ring-daf-blue focus-visible:ring-2 focus-visible:ring-offset-0 border-gray-200"
                   disabled={isLoading}
                 />
-                <Button
-                  type="submit"
-                  disabled={isLoading || !input.trim()}
-                  className="bg-daf-blue hover:bg-daf-blue/90 text-white"
-                >
+                <Button type="submit" disabled={isLoading} className="bg-daf-blue hover:bg-daf-blue/90 text-white">
                   <Send className="h-4 w-4" />
                 </Button>
               </form>
